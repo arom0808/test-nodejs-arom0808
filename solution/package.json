@@ -1,0 +1,13 @@
+{
+  "name": "solution",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "Unlicense",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "connect": "^3.7.0"
+  },
+  "engines": {
+    "node": ">18.0.0"
+  }
+}
