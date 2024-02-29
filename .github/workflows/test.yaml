@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 10
     if: github.actor != 'github-classroom[bot]'
     steps:
-      - uses: Central-University-IT/setup-playground-backend@v1
+      - uses: Central-University-IT/setup-test-backend@v1
 
       - uses: docker/login-action@v3.0.0
         with:
