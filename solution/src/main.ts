@@ -27,6 +27,7 @@ async function bootstrap() {
       process.exit(0);
     }),
   );
+  console.log('server_port', server_port);
   await app.listen(server_port);
 }
 
