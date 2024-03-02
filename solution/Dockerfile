@@ -28,4 +28,6 @@ RUN cp -r ./dist/* ./ && cp -r ./initdb/* ./ && rm -rf dist && rm -rf initdb
 
 USER node
 
+ENV APP_ENV=production
+
 CMD ["node", "./main.js"]
