@@ -28,7 +28,7 @@ async function bootstrap() {
     }),
   );
   console.log('server_port', server_port);
-  await app.listen(server_port);
+  await app.listen(server_port, '0.0.0.0');
 }
 
 bootstrap();
