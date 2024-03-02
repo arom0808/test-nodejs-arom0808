@@ -19,6 +19,7 @@ async function bootstrap() {
   if (typeof server_port !== 'number' || isNaN(server_port))
     throw new Error('Incorrect SERVER_PORT');
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.setGlobalPrefix('/api');
 
   ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((signal) =>
     process.on(signal, async () => {
