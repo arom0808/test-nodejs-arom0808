@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_CONN")
+}
+
+model countries {
+  id     Int     @id @default(autoincrement())
+  name   String?
+  alpha2 String?
+  alpha3 String?
+  region String?
+  users  User[]
+}
+
+model User {
+  id                     Int       @id @default(autoincrement())
+  login                  String    @unique
+  email                  String    @unique @db.VarChar(50)
+  passwordHash           String    @db.VarChar(60)
+  country                countries @relation(fields: [countryId], references: [id])
+  countryId              Int
+  isPublic               Boolean
+  phone                  String?   @unique
+  image                  String?   @db.VarChar(200)
+  friendsAsA             Friend[]  @relation("FriendA")
+  friendsAsB             Friend[]  @relation("FriendB")
+  posts                  Post[]
+  Post_UserDislikedPosts Post[]    @relation("UserDislikedPosts")
+  Post_UserLikedPosts    Post[]    @relation("UserLikedPosts")
+}
+
+model Friend {
+  A          User     @relation("FriendA", fields: [aId], references: [id])
+  aId        Int
+  B          User     @relation("FriendB", fields: [bId], references: [id])
+  bId        Int
+  assignedAt DateTime @default(now())
+
+  @@id([aId, bId])
+}
+
+model Post {
+  id                     Int      @id @default(autoincrement())
+  content                String   @db.VarChar(1000)
+  tags                   String[] @db.VarChar(20)
+  author                 User     @relation(fields: [authorId], references: [id])
+  authorId               Int
+  createdAt              DateTime @default(now())
+  User_UserDislikedPosts User[]   @relation("UserDislikedPosts")
+  User_UserLikedPosts    User[]   @relation("UserLikedPosts")
+}
+
+model JWTToken {
+  id        Int      @id @default(autoincrement())
+  expiresIn DateTime
+}

@@ -1,0 +1,49 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14.8-alpine3.18
+    environment:
+      POSTGRES_DB: "prod-olymp"
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "root"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+      - prod-olymp-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d prod-olymp" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - test-nodejs-arom0808
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+  app:
+    environment:
+      POSTGRES_CONN: postgresql://root:root@postgres:5432/prod-olymp
+      SERVER_PORT: 3000
+    stop_grace_period: 1m
+    build: .
+    image: test-nodejs-arom0808-solution
+    networks:
+      - test-nodejs-arom0808
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+
+networks:
+  test-nodejs-arom0808:
+    name: test-nodejs-arom0808
+    driver: bridge
+
+volumes:
+  prod-olymp-data:
