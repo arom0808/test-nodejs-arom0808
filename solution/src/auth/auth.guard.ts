@@ -12,14 +12,22 @@ import { InvalidJWTFormatException } from './exceptions';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './decorators';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly jwt_secret: string;
+
   constructor(
     private jwtService: JwtService,
     private prismaService: PrismaService,
     private reflector: Reflector,
-  ) {}
+    configService: ConfigService,
+  ) {
+    this.jwt_secret = configService.get('RANDOM_SECRET');
+    if (typeof this.jwt_secret !== 'string')
+      throw new Error('Invalid RANDOM_SECRET env');
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -38,6 +46,7 @@ export class AuthGuard implements CanActivate {
       const clock = new Date();
       const payload = await this.jwtService.verifyAsync(token, {
         clockTimestamp: Math.floor(clock.getTime() / 1000),
+        secret: this.jwt_secret,
       });
       if (
         typeof payload !== 'object' ||

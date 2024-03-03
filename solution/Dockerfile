@@ -16,7 +16,7 @@ RUN mkdir temp temp/.prisma temp/@prisma temp/prisma && cp -r ./node_modules/.pr
 
 RUN rm -rf node_modules
 
-RUN npm install --production
+RUN npm install --omit=dev
 
 RUN cp -r ./temp/* ./node_modules/ && rm -rf temp
 

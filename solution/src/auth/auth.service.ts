@@ -4,13 +4,20 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { hashConstants, jwtConstants } from './constants';
 import { WrongLoginOrPasswordException } from './exceptions';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
+  private readonly jwt_secret: string;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    configService: ConfigService,
   ) {
+    this.jwt_secret = configService.get('RANDOM_SECRET');
+    if (typeof this.jwt_secret !== 'string')
+      throw new Error('Invalid RANDOM_SECRET env');
     setInterval(() => {
       this.clearTokensDB();
     }, jwtConstants.clearTimeout);
@@ -57,7 +64,7 @@ export class AuthService {
     });
     const token = await this.jwtService.signAsync(
       { exp: Math.floor(expiresIn.getTime() / 1000), userId, jti: jwtId },
-      { noTimestamp: true },
+      { noTimestamp: true, secret: this.jwt_secret },
     );
     return { token };
   }
