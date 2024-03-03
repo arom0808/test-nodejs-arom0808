@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserType } from './dto/user.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -25,6 +25,8 @@ export class UsersService {
     image: true,
     country: { select: { alpha2: true } },
   };
+
+  private readonly userSelectWithId = { ...this.userSelect, id: true };
 
   private userDbToType(
     user: Pick<UserType, 'login' | 'email' | 'isPublic'>,
@@ -83,7 +85,7 @@ export class UsersService {
     }
   }
 
-  public async getProfile(userId: number): Promise<UserType> {
+  public async getMyProfile(userId: number): Promise<UserType> {
     const { country, phone, image, ...user } =
       await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -92,7 +94,7 @@ export class UsersService {
     return this.userDbToType(user, phone, image, country.alpha2);
   }
 
-  public async updateProfile(userId: number, updateDto: UpdateDto) {
+  public async updateMyProfile(userId: number, updateDto: UpdateDto) {
     const { countryCode, ...updates } = updateDto;
     try {
       const { country, phone, image, ...user } = await this.prisma.$transaction(
@@ -111,5 +113,56 @@ export class UsersService {
     } catch (e) {
       this.handleUserExceptions(e, countryCode);
     }
+  }
+
+  public async getProfile(userId: number, login: string) {
+    const foundUser = await this.prisma.user.findUnique({
+      where: { login },
+      select: this.userSelectWithId,
+    });
+    if (foundUser === null)
+      throw new HttpException(
+        'No profile with this login was found',
+        HttpStatus.FORBIDDEN,
+      );
+    const { country, phone, image, id: foundId, ...user } = foundUser;
+    if (user.isPublic || userId === foundId)
+      return this.userDbToType(user, phone, image, country.alpha2);
+    const is_friend = await this.prisma.friend.findUnique({
+      where: { aId_bId: { aId: userId, bId: foundId } },
+      select: { aId: true },
+    });
+    if (is_friend !== null)
+      return this.userDbToType(user, phone, image, country.alpha2);
+    throw new HttpException(
+      'You do not have access to this profile',
+      HttpStatus.FORBIDDEN,
+    );
+  }
+
+  public async updatePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const { passwordHash: oldPasswordHash } =
+      await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { passwordHash: true },
+      });
+    if (!(await this.authService.isPasswordMatch(oldPassword, oldPasswordHash)))
+      throw new HttpException(
+        'This password does not match the real one',
+        HttpStatus.FORBIDDEN,
+      );
+    const passwordHash = await this.authService.hashPassword(newPassword);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+        select: { id: true },
+      }),
+      this.prisma.jWTToken.deleteMany({ where: { userId } }),
+    ]);
   }
 }

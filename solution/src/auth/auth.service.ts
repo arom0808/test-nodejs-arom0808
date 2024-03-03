@@ -57,7 +57,7 @@ export class AuthService {
       )
         throw new WrongLoginOrPasswordException();
       const { id: jwtId } = await tx.jWTToken.create({
-        data: { expiresIn },
+        data: { expiresIn, userId: user.id },
         select: { id: true },
       });
       return { jwtId, userId: user.id };

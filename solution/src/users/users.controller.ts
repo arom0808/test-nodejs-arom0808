@@ -2,6 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
+  Param,
   Patch,
   Post,
   Request,
@@ -12,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UserType } from './dto/user.dto';
 import { Public } from '../auth/decorators';
 import { UpdateDto } from './dto/update.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Controller()
 export class UsersController {
@@ -27,7 +31,7 @@ export class UsersController {
 
   @Get('/me/profile')
   getMyProfile(@Request() { userId }: { userId: number }) {
-    return this.usersService.getProfile(userId);
+    return this.usersService.getMyProfile(userId);
   }
 
   @Patch('/me/profile')
@@ -35,6 +39,24 @@ export class UsersController {
     @Request() { userId }: { userId: number },
     @Body(new ValidationPipe({ whitelist: true })) updateDto: UpdateDto,
   ) {
-    return this.usersService.updateProfile(userId, updateDto);
+    return this.usersService.updateMyProfile(userId, updateDto);
+  }
+
+  @Get('/profiles/:login')
+  async getProfile(
+    @Request() { userId }: { userId: number },
+    @Param() { login }: { login: string },
+  ) {
+    return await this.usersService.getProfile(userId, login);
+  }
+
+  @Post('/me/updatePassword')
+  @HttpCode(HttpStatus.OK)
+  async updatePassword(
+    @Request() { userId }: { userId: number },
+    @Body(new ValidationPipe()) { oldPassword, newPassword }: UpdatePasswordDto,
+  ) {
+    await this.usersService.updatePassword(userId, oldPassword, newPassword);
+    return { status: 'ok' };
   }
 }

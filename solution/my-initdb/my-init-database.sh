@@ -3,7 +3,7 @@ set -e
 
 #psql -v ON_ERROR_STOP=1 --host "$POSTGRES_HOST" --port "$POSTGRES_PORT" --username "$POSTGRES_USERNAME" --dbname "$POSTGRES_DATABASE" --no-password <<-EOSQL
 psql -v ON_ERROR_STOP=1 "$POSTGRES_CONN" <<-EOSQL
-  -- CreateTable
+-- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "login" TEXT NOT NULL,
@@ -40,6 +40,7 @@ CREATE TABLE "Post" (
 -- CreateTable
 CREATE TABLE "JWTToken" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "expiresIn" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "JWTToken_pkey" PRIMARY KEY ("id")
@@ -89,6 +90,9 @@ ALTER TABLE "Friend" ADD CONSTRAINT "Friend_bId_fkey" FOREIGN KEY ("bId") REFERE
 
 -- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "JWTToken" ADD CONSTRAINT "JWTToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_UserDislikedPosts" ADD CONSTRAINT "_UserDislikedPosts_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;

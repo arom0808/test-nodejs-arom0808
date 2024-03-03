@@ -55,8 +55,12 @@ export class AuthGuard implements CanActivate {
         typeof payload.jti !== 'number'
       )
         throw new InvalidJWTFormatException();
-      await this.prismaService.jWTToken.findFirstOrThrow({
-        where: { id: payload.jti, expiresIn: { gte: clock } },
+      await this.prismaService.jWTToken.findUniqueOrThrow({
+        where: {
+          id: payload.jti,
+          expiresIn: { gte: clock },
+          userId: payload.userId,
+        },
         select: { id: true },
       });
       request['userId'] = payload.userId;
