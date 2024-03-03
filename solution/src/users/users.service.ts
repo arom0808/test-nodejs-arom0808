@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserType } from './dto/user.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -11,15 +11,11 @@ import { AuthService } from '../auth/auth.service';
 import { UpdateDto } from './dto/update.dto';
 
 @Injectable()
-export class UsersService implements OnApplicationShutdown {
+export class UsersService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
   ) {}
-
-  onApplicationShutdown(signal: string) {
-    console.log('users_signal', signal); // e.g. "SIGINT"
-  }
 
   private readonly userSelect = {
     login: true,

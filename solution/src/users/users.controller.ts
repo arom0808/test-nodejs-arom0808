@@ -22,11 +22,7 @@ export class UsersController {
   async register(
     @Body(new ValidationPipe({ whitelist: true })) registerDto: RegisterDto,
   ): Promise<{ profile: UserType }> {
-    try {
-      return { profile: await this.usersService.register(registerDto) };
-    } catch (e) {
-      return { e: JSON.stringify(e) } as any;
-    }
+    return { profile: await this.usersService.register(registerDto) };
   }
 
   @Get('/me/profile')

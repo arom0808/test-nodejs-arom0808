@@ -28,7 +28,7 @@ services:
           memory: 4G
   app:
     environment:
-      POSTGRES_CONN: postgresql://root:root@postgres:5432/prod-olymp
+      POSTGRES_CONN: postgres://root:root@postgres:5432/prod-olymp
       SERVER_PORT: 3000
     stop_grace_period: 1m
     build: .
