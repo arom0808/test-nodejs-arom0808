@@ -54,7 +54,7 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async updatePassword(
     @Request() { userId }: { userId: number },
-    @Body(new ValidationPipe()) { oldPassword, newPassword }: UpdatePasswordDto,
+    @Body(ValidationPipe) { oldPassword, newPassword }: UpdatePasswordDto,
   ) {
     await this.usersService.updatePassword(userId, oldPassword, newPassword);
     return { status: 'ok' };

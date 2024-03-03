@@ -17,7 +17,7 @@ export class AuthController {
 
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
-  signIn(@Body(new ValidationPipe()) { login, password }: SignInDto) {
+  signIn(@Body(ValidationPipe) { login, password }: SignInDto) {
     return this.authService.signIn(login, password);
   }
 
