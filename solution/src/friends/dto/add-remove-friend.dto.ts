@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class AddDto {
+export class AddRemoveFriendDto {
   @IsString()
   login: string;
 }

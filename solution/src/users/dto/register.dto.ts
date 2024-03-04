@@ -12,6 +12,7 @@ export class RegisterDto {
   @Matches('^[a-zA-Z0-9-]+$')
   login: string;
 
+  @MinLength(1)
   @MaxLength(50)
   @IsEmail()
   email: string;
@@ -31,6 +32,7 @@ export class RegisterDto {
 
   @IsOptional()
   @Matches('^\\+[\\d]+$')
+  @MaxLength(20)
   phone?: string;
 
   @IsOptional()

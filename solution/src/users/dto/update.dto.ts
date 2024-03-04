@@ -11,6 +11,7 @@ export class UpdateDto {
 
   @IsOptional()
   @Matches('^\\+[\\d]+$')
+  @MaxLength(20)
   phone?: string;
 
   @IsOptional()

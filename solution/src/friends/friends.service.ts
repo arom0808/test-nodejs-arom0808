@@ -9,11 +9,11 @@ export class FriendsService {
 
   public async addFriend(userId: number, login: string) {
     try {
+      const assignedAt = new Date();
       const { id: friendId } = await this.prisma.user.findUniqueOrThrow({
         where: { login },
         select: { id: true },
       });
-      const assignedAt = new Date();
       await this.prisma.friend.upsert({
         where: { aId_bId: { aId: userId, bId: friendId } },
         create: { aId: userId, bId: friendId, assignedAt },
@@ -32,13 +32,8 @@ export class FriendsService {
   }
 
   public async removeFriend(userId: number, login: string) {
-    const { id: friendId } = await this.prisma.user.findUnique({
-      where: { login },
-      select: { id: true },
-    });
-    if (friendId === null) return;
     await this.prisma.friend.deleteMany({
-      where: { aId: userId, bId: friendId },
+      where: { aId: userId, B: { login } },
     });
   }
 

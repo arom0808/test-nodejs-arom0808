@@ -17,21 +17,21 @@ model countries {
 }
 
 model User {
-  id                     Int        @id @default(autoincrement())
-  login                  String     @unique
-  email                  String     @unique @db.VarChar(50)
-  passwordHash           String     @db.VarChar(60)
-  country                countries  @relation(fields: [countryId], references: [id])
-  countryId              Int
-  isPublic               Boolean
-  phone                  String?    @unique
-  image                  String?    @db.VarChar(200)
-  friendsAsA             Friend[]   @relation("FriendA")
-  friendsAsB             Friend[]   @relation("FriendB")
-  posts                  Post[]
-  Post_UserDislikedPosts Post[]     @relation("UserDislikedPosts")
-  Post_UserLikedPosts    Post[]     @relation("UserLikedPosts")
-  JWTToken               JWTToken[]
+  id             Int        @id @default(autoincrement())
+  login          String     @unique
+  email          String     @unique @db.VarChar(50)
+  passwordHash   String     @db.VarChar(60)
+  country        countries  @relation(fields: [countryId], references: [id])
+  countryId      Int
+  isPublic       Boolean
+  phone          String?    @unique
+  image          String?    @db.VarChar(200)
+  friendsAsA     Friend[]   @relation("FriendA")
+  friendsAsB     Friend[]   @relation("FriendB")
+  posts          Post[]
+  dislickedPosts Post[]     @relation("UserDislikedPosts")
+  likedPosts     Post[]     @relation("UserLikedPosts")
+  JWTToken       JWTToken[]
 }
 
 model Friend {
@@ -45,14 +45,14 @@ model Friend {
 }
 
 model Post {
-  id                     Int      @id @default(autoincrement())
-  content                String   @db.VarChar(1000)
-  tags                   String[] @db.VarChar(20)
-  author                 User     @relation(fields: [authorId], references: [id])
-  authorId               Int
-  createdAt              DateTime @default(now())
-  User_UserDislikedPosts User[]   @relation("UserDislikedPosts")
-  User_UserLikedPosts    User[]   @relation("UserLikedPosts")
+  id            Int      @id @default(autoincrement())
+  content       String   @db.VarChar(1000)
+  tags          String[] @db.VarChar(20)
+  author        User     @relation(fields: [authorId], references: [id])
+  authorId      Int
+  createdAt     DateTime @default(now())
+  usersDisliked User[]   @relation("UserDislikedPosts")
+  usersLiked    User[]   @relation("UserLikedPosts")
 }
 
 model JWTToken {

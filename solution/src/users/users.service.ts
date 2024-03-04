@@ -9,6 +9,7 @@ import {
 } from '../auth/exceptions';
 import { AuthService } from '../auth/auth.service';
 import { UpdateDto } from './dto/update.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UsersService {
@@ -67,19 +68,20 @@ export class UsersService {
     const { countryCode, password, ...data } = registerDto;
     const passwordHash = await this.authService.hashPassword(password);
     try {
-      const { country, phone, image, ...user } = await this.prisma.$transaction(
-        async (tx) => {
-          return tx.user.create({
-            data: {
-              ...data,
-              passwordHash,
-              countryId: await this.getCountryIdOnCode(tx, countryCode),
-            },
-            select: this.userSelect,
-          });
+      const {
+        country: { alpha2 },
+        phone,
+        image,
+        ...user
+      } = await this.prisma.user.create({
+        data: {
+          ...data,
+          passwordHash,
+          countryId: await this.getCountryIdOnCode(this.prisma, countryCode),
         },
-      );
-      return this.userDbToType(user, phone, image, country.alpha2);
+        select: this.userSelect,
+      });
+      return this.userDbToType(user, phone, image, alpha2);
     } catch (e) {
       this.handleUserExceptions(e, countryCode);
     }
@@ -97,19 +99,20 @@ export class UsersService {
   public async updateMyProfile(userId: number, updateDto: UpdateDto) {
     const { countryCode, ...updates } = updateDto;
     try {
-      const { country, phone, image, ...user } = await this.prisma.$transaction(
-        async (tx) => {
-          let countryId: number | undefined = undefined;
-          if (countryCode !== undefined)
-            countryId = await this.getCountryIdOnCode(tx, countryCode);
-          return tx.user.update({
-            where: { id: userId },
-            data: { ...updates, countryId },
-            select: this.userSelect,
-          });
-        },
-      );
-      return this.userDbToType(user, phone, image, country.alpha2);
+      let countryId: number | undefined = undefined;
+      if (countryCode !== undefined)
+        countryId = await this.getCountryIdOnCode(this.prisma, countryCode);
+      const {
+        country: { alpha2 },
+        phone,
+        image,
+        ...user
+      } = await this.prisma.user.update({
+        where: { id: userId },
+        data: { ...updates, countryId },
+        select: this.userSelect,
+      });
+      return this.userDbToType(user, phone, image, alpha2);
     } catch (e) {
       this.handleUserExceptions(e, countryCode);
     }
@@ -118,26 +121,30 @@ export class UsersService {
   public async getProfile(userId: number, login: string) {
     const foundUser = await this.prisma.user.findUnique({
       where: { login },
-      select: this.userSelectWithId,
+      select: {
+        ...this.userSelectWithId,
+        friendsAsA: { where: { bId: userId }, select: { aId: true } },
+      },
     });
-    if (foundUser === null)
+    if (
+      foundUser === null ||
+      (foundUser.id !== userId &&
+        !foundUser.isPublic &&
+        foundUser.friendsAsA.length < 1)
+    )
       throw new HttpException(
-        'No profile with this login was found',
+        'No profile was found with the same username that you have access to',
         HttpStatus.FORBIDDEN,
       );
-    const { country, phone, image, id: foundId, ...user } = foundUser;
-    if (user.isPublic || userId === foundId)
-      return this.userDbToType(user, phone, image, country.alpha2);
-    const is_friend = await this.prisma.friend.findUnique({
-      where: { aId_bId: { aId: userId, bId: foundId } },
-      select: { aId: true },
-    });
-    if (is_friend !== null)
-      return this.userDbToType(user, phone, image, country.alpha2);
-    throw new HttpException(
-      'You do not have access to this profile',
-      HttpStatus.FORBIDDEN,
-    );
+    const {
+      country: { alpha2 },
+      phone,
+      image,
+      id: foundId,
+      friendsAsA,
+      ...user
+    } = foundUser;
+    return this.userDbToType(user, phone, image, alpha2);
   }
 
   public async updatePassword(
@@ -145,24 +152,29 @@ export class UsersService {
     oldPassword: string,
     newPassword: string,
   ) {
-    const { passwordHash: oldPasswordHash } =
-      await this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: { passwordHash: true },
-      });
-    if (!(await this.authService.isPasswordMatch(oldPassword, oldPasswordHash)))
-      throw new HttpException(
-        'This password does not match the real one',
-        HttpStatus.FORBIDDEN,
-      );
-    const passwordHash = await this.authService.hashPassword(newPassword);
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash },
-        select: { id: true },
-      }),
-      this.prisma.jWTToken.deleteMany({ where: { userId } }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: {
+            id: userId,
+            passwordHash: await this.authService.hashPassword(oldPassword),
+          },
+          data: {
+            passwordHash: await this.authService.hashPassword(newPassword),
+          },
+          select: { id: true },
+        }),
+        this.prisma.jWTToken.deleteMany({ where: { userId } }),
+      ]);
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2025')
+          throw new HttpException(
+            'This password does not match the real one',
+            HttpStatus.FORBIDDEN,
+          );
+      }
+      throw e;
+    }
   }
 }
