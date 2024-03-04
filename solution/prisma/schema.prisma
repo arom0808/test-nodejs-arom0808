@@ -17,21 +17,21 @@ model countries {
 }
 
 model User {
-  id             Int        @id @default(autoincrement())
-  login          String     @unique
-  email          String     @unique @db.VarChar(50)
-  passwordHash   String     @db.VarChar(60)
-  country        countries  @relation(fields: [countryId], references: [id])
-  countryId      Int
-  isPublic       Boolean
-  phone          String?    @unique
-  image          String?    @db.VarChar(200)
-  friendsAsA     Friend[]   @relation("FriendA")
-  friendsAsB     Friend[]   @relation("FriendB")
-  posts          Post[]
-  dislickedPosts Post[]     @relation("UserDislikedPosts")
-  likedPosts     Post[]     @relation("UserLikedPosts")
-  JWTToken       JWTToken[]
+  id            Int        @id @default(autoincrement())
+  login         String     @unique
+  email         String     @unique @db.VarChar(50)
+  passwordHash  String     @db.VarChar(60)
+  country       countries  @relation(fields: [countryId], references: [id])
+  countryId     Int
+  isPublic      Boolean
+  phone         String?    @unique
+  image         String?    @db.VarChar(200)
+  friendsAsA    Friend[]   @relation("FriendA")
+  friendsAsB    Friend[]   @relation("FriendB")
+  posts         Post[]
+  dislikedPosts Post[]     @relation("UserDislikedPosts")
+  likedPosts    Post[]     @relation("UserLikedPosts")
+  JWTToken      JWTToken[]
 }
 
 model Friend {

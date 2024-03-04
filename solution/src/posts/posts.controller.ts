@@ -55,4 +55,22 @@ export class PostsController {
   ) {
     return this.postsService.getFeed(userId, limit, offset, login);
   }
+
+  @Post(':postId/like')
+  @HttpCode(HttpStatus.OK)
+  likePost(
+    @Request() { userId }: { userId: number },
+    @Param() { postId }: { postId: string },
+  ) {
+    return this.postsService.likeDislikePost(userId, postId, true);
+  }
+
+  @Post(':postId/dislike')
+  @HttpCode(HttpStatus.OK)
+  dislikePost(
+    @Request() { userId }: { userId: number },
+    @Param() { postId }: { postId: string },
+  ) {
+    return this.postsService.likeDislikePost(userId, postId, false);
+  }
 }

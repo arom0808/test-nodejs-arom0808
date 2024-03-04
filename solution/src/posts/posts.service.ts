@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { rfc3339 } from '../common/rfc3339';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class PostsService {
@@ -129,5 +130,79 @@ export class PostsService {
       likesCount: v._count.usersLiked,
       dislikesCount: v._count.usersDisliked,
     }));
+  }
+
+  public async likeDislikePost(
+    userId: number,
+    postId: string,
+    like: boolean,
+  ): Promise<PostOutDto> {
+    const numPostId = parseInt(postId);
+    if (isNaN(numPostId)) this.ThrowNoPostFoundException();
+    try {
+      const [
+        { id: _ },
+        { id: __ },
+        {
+          id,
+          content,
+          author: { login: author },
+          tags,
+          createdAt,
+          _count: { usersLiked: likesCount, usersDisliked: dislikesCount },
+        },
+      ] = await this.prisma.$transaction([
+        this.prisma.post.findUniqueOrThrow({
+          where: {
+            id: numPostId,
+            author: {
+              OR: [
+                { friendsAsA: { some: { bId: userId } } },
+                { id: userId },
+                { isPublic: true },
+              ],
+            },
+          },
+          select: { id: true },
+        }),
+        this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            likedPosts: like
+              ? { connect: { id: numPostId } }
+              : { disconnect: { id: numPostId } },
+            dislikedPosts: like
+              ? { disconnect: { id: numPostId } }
+              : { connect: { id: numPostId } },
+          },
+          select: { id: true },
+        }),
+        this.prisma.post.findUniqueOrThrow({
+          where: { id: numPostId },
+          select: {
+            id: true,
+            content: true,
+            author: { select: { login: true } },
+            tags: true,
+            createdAt: true,
+            _count: { select: { usersLiked: true, usersDisliked: true } },
+          },
+        }),
+      ]);
+      return {
+        id: id.toString(),
+        content,
+        author,
+        tags,
+        createdAt: rfc3339(createdAt),
+        likesCount,
+        dislikesCount,
+      };
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2025') this.ThrowNoPostFoundException();
+      }
+      throw e;
+    }
   }
 }
