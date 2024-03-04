@@ -81,10 +81,53 @@ export class PostsService {
     };
   }
 
-  // public async getFeed(userId: number, login?: string) {
-  //   this.prisma.post.findMany({
-  //     where:{author:{login:}},
-  //
-  //   })
-  // }
+  public async getFeed(
+    userId: number,
+    limit: number,
+    offset: number,
+    login?: string,
+  ): Promise<PostOutDto[]> {
+    const userWhere = login === undefined ? { id: userId } : { login };
+    const user = await this.prisma.user.findUnique({
+      where: userWhere,
+      select: {
+        id: true,
+        login: true,
+        isPublic: true,
+        posts: {
+          select: {
+            id: true,
+            content: true,
+            tags: true,
+            createdAt: true,
+            _count: { select: { usersLiked: true, usersDisliked: true } },
+          },
+          skip: offset,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        },
+        friendsAsA: { where: { bId: userId }, select: { aId: true } },
+      },
+    });
+    if (
+      user === null ||
+      (login !== undefined &&
+        user.id !== userId &&
+        !user.isPublic &&
+        user.friendsAsA.length < 1)
+    )
+      throw new HttpException(
+        'No profile was found with the same username that you have access to',
+        HttpStatus.NOT_FOUND,
+      );
+    return user.posts.map((v) => ({
+      id: v.id.toString(),
+      content: v.content,
+      author: user.login,
+      tags: v.tags,
+      createdAt: rfc3339(v.createdAt),
+      likesCount: v._count.usersLiked,
+      dislikesCount: v._count.usersDisliked,
+    }));
+  }
 }

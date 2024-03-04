@@ -42,5 +42,17 @@ export class PostsController {
     @Request() { userId }: { userId: number },
     @PaginationLimit() limit: number,
     @PaginationOffset() offset: number,
-  ) {}
+  ) {
+    return this.postsService.getFeed(userId, limit, offset);
+  }
+
+  @Get('feed/:login')
+  getFeed(
+    @Request() { userId }: { userId: number },
+    @PaginationLimit() limit: number,
+    @PaginationOffset() offset: number,
+    @Param() { login }: { login: string },
+  ) {
+    return this.postsService.getFeed(userId, limit, offset, login);
+  }
 }
