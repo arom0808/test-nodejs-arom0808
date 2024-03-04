@@ -24,7 +24,7 @@ model User {
   country       countries  @relation(fields: [countryId], references: [id])
   countryId     Int
   isPublic      Boolean
-  phone         String?    @unique
+  phone         String?    @unique @db.VarChar(20)
   image         String?    @db.VarChar(200)
   friendsAsA    Friend[]   @relation("FriendA")
   friendsAsB    Friend[]   @relation("FriendB")

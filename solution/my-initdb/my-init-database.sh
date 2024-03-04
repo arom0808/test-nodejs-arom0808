@@ -3,6 +3,7 @@ set -e
 
 #psql -v ON_ERROR_STOP=1 --host "$POSTGRES_HOST" --port "$POSTGRES_PORT" --username "$POSTGRES_USERNAME" --dbname "$POSTGRES_DATABASE" --no-password <<-EOSQL
 psql -v ON_ERROR_STOP=1 "$POSTGRES_CONN" <<-EOSQL
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -11,7 +12,7 @@ CREATE TABLE "User" (
     "passwordHash" VARCHAR(60) NOT NULL,
     "countryId" INTEGER NOT NULL,
     "isPublic" BOOLEAN NOT NULL,
-    "phone" TEXT,
+    "phone" VARCHAR(20),
     "image" VARCHAR(200),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -105,5 +106,6 @@ ALTER TABLE "_UserLikedPosts" ADD CONSTRAINT "_UserLikedPosts_A_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "_UserLikedPosts" ADD CONSTRAINT "_UserLikedPosts_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 
 EOSQL
